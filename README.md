@@ -1,4 +1,4 @@
 ContentApi
 ==========
 
-RESTfull Content API for Bolt CMS
+Content API for Bolt CMS
