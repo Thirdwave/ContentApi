@@ -1,0 +1,40 @@
+# Base url of the api.
+mounting_point: '/api'
+
+# By default the content api only allows requests from the same ip address as
+# the content api. You can add additional ip addresses here that are allowed to
+# make requests to the api.
+whitelist:
+
+# List contenttypes that cannot be requested through the api.
+exclude: [ ]
+
+# Default value for query parameters.
+defaults:
+  limit: 10
+  order: -datepublish
+
+# Set to false to exclude base columns for a record or listing. If set to true
+# all base columns will be included. Can also be set per contenttype.
+base_columns: [ id, slug ]
+
+# Contenttype customization.
+contenttypes:
+
+  #
+  # Example:
+  #
+  # pages:                      # Name of the contenttype.
+  #
+  #   listing: [id, title]      # Fields to be returned for a listing.
+  #
+  #   record: [title, content]  # Fields to be returned for a single record.
+  #
+  #   exclude: false            # When set to true this contenttype cannot
+  #                             # be requested through the content api.
+  #
+  #   base_columns: [ id ]      # Set to false to exclude base columns.
+  #                             # Set to true to include all base columns.
+  #
+  #   related: [ aciviteit ]
+  #
