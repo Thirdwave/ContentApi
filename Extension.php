@@ -114,7 +114,7 @@ class Extension extends BaseExtension
             }
         }
 
-        return $this->app->json(array('status' => 403), 403);
+        return $this->app->json(array('status' => 403, 'error' => 'Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.'), 403);
     }
 
 
