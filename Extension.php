@@ -32,21 +32,39 @@ class Extension extends BaseExtension
 {
 
 
+    /**
+     * Quick access to all configured contenttype from Bolt.
+     *
+     * @var array
+     */
     protected $contenttypes;
 
 
+    /**
+     * Returns the name of the extension.
+     *
+     * @return string
+     */
     public function getName()
     {
         return "contentapi";
     }
 
 
+    /**
+     * Returns the version of the API.
+     *
+     * @return string
+     */
     public function getVersion()
     {
         return "1.0.0";
     }
 
 
+    /**
+     * Initialize the extension.
+     */
     public function initialize()
     {
         $this->contenttypes = $this->app['config']->get('contenttypes');
@@ -99,6 +117,12 @@ class Extension extends BaseExtension
     }
 
 
+    /**
+     * Executed before each api call. Checks for whitelist access.
+     *
+     * @param  Request $request Current request.
+     * @return null|JsonResponse
+     */
     public function before(Request $request)
     {
         $client = $request->getClientIp();
@@ -114,7 +138,10 @@ class Extension extends BaseExtension
             }
         }
 
-        return $this->app->json(array('status' => 403, 'error' => 'Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.'), 403);
+        return $this->app->json(array(
+            'status' => 403,
+            'error'  => 'Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.'
+          ), 403);
     }
 
 

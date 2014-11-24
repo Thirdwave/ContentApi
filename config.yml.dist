@@ -4,7 +4,7 @@ mounting_point: '/api'
 # By default the content api only allows requests from the same ip address as
 # the content api. You can add additional ip addresses here that are allowed to
 # make requests to the api.
-whitelist:
+whitelist: [ ]
 
 # List contenttypes that cannot be requested through the api.
 exclude: [ ]
