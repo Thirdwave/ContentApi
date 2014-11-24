@@ -35,13 +35,19 @@ class Extension extends BaseExtension
     protected $contenttypes;
 
 
-    function getName()
+    public function getName()
     {
         return "contentapi";
     }
 
 
-    function initialize()
+    public function getVersion()
+    {
+        return "2.0.0";
+    }
+
+
+    public function initialize()
     {
         $this->contenttypes = $this->app['config']->get('contenttypes');
 
@@ -86,7 +92,7 @@ class Extension extends BaseExtension
         $routes->match('/{contenttype}/{slugOrId}', array($this, 'record'));
 
         // Include the major version in the api mounting point.
-        $parts   = explode('.', $this->info['version']);
+        $parts   = explode('.', $this->getVersion());
         $version = array_shift($parts);
 
         $this->app->mount($this->config['mounting_point'] . '/v' . $version, $routes);
