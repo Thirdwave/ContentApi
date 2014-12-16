@@ -624,12 +624,15 @@ class Extension extends BaseExtension
                 }
 
                 $parts = explode('/', $value['file']);
+                $path  = substr($this->app['paths']['files'], 1) . $value['file'];
+                $host  = $this->app['paths']['hosturl'] . '/';
 
                 $value = array(
                   'file'     => $value['file'],
                   'filename' => array_pop($parts),
-                  'path'     => substr($this->app['paths']['files'], 1) . $value['file'],
-                  'host'     => $this->app['paths']['hosturl'] . '/'
+                  'path'     => $path,
+                  'host'     => $host,
+                  'url'      => $host . $path
                 );
 
                 break;
