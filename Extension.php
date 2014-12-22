@@ -2,7 +2,9 @@
 
 use Bolt\BaseExtension;
 use Bolt\Content;
+use Bolt\Permissions;
 use Doctrine\DBAL\DBALException;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
 
@@ -47,7 +49,7 @@ class Extension extends BaseExtension
      */
     public function getName()
     {
-        return "contentapi";
+        return 'contentapi';
     }
 
 
@@ -58,12 +60,14 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.0.0";
+        return '1.0.1';
     }
 
 
     /**
      * Initialize the extension.
+     *
+     * @todo Add API role allow for permission based on API role.
      */
     public function initialize()
     {
@@ -139,9 +143,9 @@ class Extension extends BaseExtension
         }
 
         return $this->app->json(array(
-            'status' => 403,
-            'error'  => 'Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.'
-          ), 403);
+          'status' => 403,
+          'error'  => 'Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.'
+        ), 403);
     }
 
 
@@ -295,6 +299,7 @@ class Extension extends BaseExtension
      * Query parameters:
      * type Name of the response type. Default is record.
      *
+     * @todo   Check if contenttype is configured to be excluded and permissions.
      * @param  string         $contenttype Contenttype to get record for.
      * @param  string|integer $slugOrId    Slug or id of the record.
      * @param  Request        $request     Current request.
@@ -448,6 +453,7 @@ class Extension extends BaseExtension
     /**
      * Returns all content for a taxonomytype and value.
      *
+     * @todo   Exclude contenttypes that were configured and check for permissions.
      * @param  array $parameters Array of parameters.
      * @param  array $paging     Paging array by reference.
      * @return array
@@ -470,6 +476,7 @@ class Extension extends BaseExtension
      * @param  array  $parameters  Parameters for getting content.
      * @param  array  $where       Extra where parameters.
      * @param  string $contenttype Name of the contenttype.
+     * @param  string $type        Type of list to return.
      * @return JsonResponse
      */
     protected function listingResponse(
@@ -479,9 +486,24 @@ class Extension extends BaseExtension
       $contenttype = null,
       $type = 'listing'
     ) {
-        // Check if a given contenttype is configured.
-        if (!empty($contenttype) && !$this->app['storage']->getContenttype($contenttype)) {
-            return $this->app->json(array('status' => 404), 404);
+        if (!empty($contenttype)) {
+            // Check if a given contenttype exists.
+            if (!$this->app['storage']->getContenttype($contenttype)) {
+                return $this->app->json(array('status' => 404), 404);
+            }
+
+            // Check if given contenttype is configured to be excluded.
+            if (in_array($contenttype, $this->config['exclude'])) {
+                return $this->app->json(array('status' => 404), 404);
+            }
+
+            // Check for permissions.
+            $user  = $this->app['users']->getCurrentUser();
+            $roles = $user ? $user['roles'] : array(Permissions::ROLE_ANONYMOUS);
+
+            if (!$this->app['permissions']->checkPermission($roles, 'view', $contenttype)) {
+                return $this->app->json(array('status' => 403), 403);
+            }
         }
 
         $parameters = array_merge($parameters, $where);
@@ -682,8 +704,8 @@ class Extension extends BaseExtension
         $contenttype = $record->contenttype;
         $baseColumns = Content::getBaseColumns();
 
-        // Check for contenttype specific base columns setting.
         if (isset($this->config['contenttypes'][$contenttype['slug']])) {
+            // Check for contenttype specific base columns setting.
             $config = $this->config['contenttypes'][$contenttype['slug']];
 
             if (isset($config['base_columns'])) {
@@ -695,22 +717,36 @@ class Extension extends BaseExtension
                         return $baseColumns;
                     }
                 }
+            } else {
+                return $this->getDefaultBaseColumns();
             }
-            // Check for a global base columns setting.
         } else {
-            if (isset($this->config['base_columns'])) {
-                // Value for base columns can be an array of fields.
-                if (is_array($this->config['base_columns'])) {
-                    return $this->config['base_columns'];
-                } else {
-                    if ($this->config['base_columns']) {
-                        return $baseColumns;
-                    }
-                }
-            }
+            return $this->getDefaultBaseColumns();
         }
 
         return array();
+    }
+
+
+    /**
+     * Returns the default configured base columns.
+     *
+     * @return array
+     */
+    public function getDefaultBaseColumns()
+    {
+        $baseColumns = Content::getBaseColumns();
+
+        if (isset($this->config['base_columns'])) {
+            // Value for base columns can be an array of fields.
+            if (is_array($this->config['base_columns'])) {
+                return $this->config['base_columns'];
+            } else {
+                if ($this->config['base_columns']) {
+                    return $baseColumns;
+                }
+            }
+        }
     }
 
 

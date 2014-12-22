@@ -25,16 +25,8 @@ contenttypes:
   # Example:
   #
   # pages:                      # Name of the contenttype.
-  #
   #   listing: [id, title]      # Fields to be returned for a listing.
-  #
   #   record: [title, content]  # Fields to be returned for a single record.
-  #
-  #   exclude: false            # When set to true this contenttype cannot
-  #                             # be requested through the content api.
-  #
   #   base_columns: [ id ]      # Set to false to exclude base columns.
   #                             # Set to true to include all base columns.
-  #
-  #   related: [ aciviteit ]
   #

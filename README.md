@@ -2,6 +2,14 @@ ContentApi
 ============================
 Content API for Bolt CMS
 
+Changelog
+----------------------------
+1.0.1
+
+- Added check for excluded contenttypes through config
+- Improved base column listing when specified for a specific contenttype
+- Added permission check for viewing content from api (for now based on anonymous role)
+
 Installation
 ----------------------------
 1. Install extension through CMS.
