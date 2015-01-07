@@ -4,6 +4,10 @@ Content API for Bolt CMS
 
 Changelog
 ----------------------------
+## 1.0.3
+- Added filesize, extension, mimetype for files.
+- Added support for imagelist values.
+
 ## 1.0.2
 - Added custom exception and error handling.
 - Added custom response type (for now only used for errors and exceptions).

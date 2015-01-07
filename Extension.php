@@ -5,6 +5,7 @@ use Bolt\BaseExtension;
 use Bolt\Content;
 use Bolt\Extension\Thirdwave\ContentApi\Exception\ForbiddenException;
 use Bolt\Extension\Thirdwave\ContentApi\Exception\NotFoundException;
+use Bolt\Library;
 use Bolt\Permissions;
 use Doctrine\DBAL\DBALException;
 use Exception;
@@ -633,30 +634,98 @@ class Extension extends BaseExtension
      */
     protected function parseRecordValue($type, $value)
     {
-        switch ($type) {
-            case 'file': // NO BREAK
-                $value = array('file' => $value);
-            case 'image':
-                if (empty($value['file'])) {
-                    return $value;
-                }
-
-                $parts = explode('/', $value['file']);
-                $path  = substr($this->app['paths']['files'], 1) . $value['file'];
-                $host  = $this->app['paths']['hosturl'] . '/';
-
-                $value = array(
-                  'file'     => $value['file'],
-                  'filename' => array_pop($parts),
-                  'path'     => $path,
-                  'host'     => $host,
-                  'url'      => $host . $path
-                );
-
-                break;
+        if (method_exists($this, 'parseRecordValue' . ucfirst($type))) {
+            $method = 'parseRecordValue' . ucfirst($type);
+            return $this->$method($value);
         }
 
         return $value;
+    }
+
+
+    /**
+     * Parse file value.
+     *
+     * @param  array|string $value
+     * @return array
+     */
+    protected function parseRecordValueFile($value)
+    {
+        if (!is_array($value)) {
+            $value = array(
+              'file' => $value
+            );
+        }
+
+        $key = 'file';
+
+        if (empty($value[$key]) && !empty($value['filename'])) {
+            $key = 'filename';
+        }
+
+        if (empty($value[$key])) {
+            return $value;
+        }
+
+        $parts = explode('/', $value[$key]);
+        $path  = substr($this->app['paths']['files'], 1) . $value[$key];
+        $host  = $this->app['paths']['hosturl'] . '/';
+
+        $finfo = new \finfo(FILEINFO_MIME);
+
+        try {
+            $mime = explode(';', $finfo->file($this->app['paths']['filespath'] . '/' . $value[$key]));
+            $mime = $mime[0];
+        } catch ( Exception $e ) {
+            $mime = null;
+        }
+
+        try {
+            $size = filesize($this->app['paths']['filespath'] . '/' . $value[$key]);
+        } catch ( Exception $e ) {
+            $size = null;
+        }
+
+        return array(
+          'file'      => $value[$key],
+          'filename'  => array_pop($parts),
+          'path'      => $path,
+          'host'      => $host,
+          'url'       => $host . $path,
+          'size'      => $size,
+          'extension' => Library::getExtension($value[$key]),
+          'mime'      => $mime
+        );
+    }
+
+
+    /**
+     * Parse image value.
+     *
+     * @param  array $value
+     * @return array
+     */
+    protected function parseRecordValueImage($value)
+    {
+        return $this->parseRecordValueFile($value);
+    }
+
+
+    /**
+     * Parse image list value.
+     *
+     * @param  array $value
+     * @return array
+     */
+    protected function parseRecordValueImagelist($value)
+    {
+        $images = array();
+
+        foreach ($value as $image) {
+            $images[] = $this->parseRecordValueImage($image);
+        }
+
+        return $images;
     }
 
 
