@@ -670,20 +670,14 @@ class Extension extends BaseExtension
         $parts = explode('/', $value[$key]);
         $path  = substr($this->app['paths']['files'], 1) . $value[$key];
         $host  = $this->app['paths']['hosturl'] . '/';
+        $mime  = null;
+        $size  = null;
 
-        $finfo = new \finfo(FILEINFO_MIME);
-
-        try {
-            $mime = explode(';', $finfo->file($this->app['paths']['filespath'] . '/' . $value[$key]));
-            $mime = $mime[0];
-        } catch ( Exception $e ) {
-            $mime = null;
-        }
-
-        try {
-            $size = filesize($this->app['paths']['filespath'] . '/' . $value[$key]);
-        } catch ( Exception $e ) {
-            $size = null;
+        if (file_exists($this->app['paths']['filespath'] . '/' . $value[$key])) {
+            $finfo = new \finfo(FILEINFO_MIME);
+            $mime  = explode(';', $finfo->file($this->app['paths']['filespath'] . '/' . $value[$key]));
+            $mime  = $mime[0];
+            $size  = filesize($this->app['paths']['filespath'] . '/' . $value[$key]);
         }
 
         return array(

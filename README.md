@@ -4,6 +4,9 @@ Content API for Bolt CMS
 
 Changelog
 ----------------------------
+## 1.0.4
+- Check if file exists before getting filesize and mimetype.
+
 ## 1.0.3
 - Added filesize, extension, mimetype for files.
 - Added support for imagelist values.
