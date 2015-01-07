@@ -713,6 +713,10 @@ class Extension extends BaseExtension
      */
     protected function parseRecordValueImagelist($value)
     {
+        if ( empty($value) ) {
+            return $value;
+        }
+
         $images = array();
 
         foreach ($value as $image) {
