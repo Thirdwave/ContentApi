@@ -1,17 +1,24 @@
 <?php namespace Bolt\Extension\Thirdwave\ContentApi;
 
+use Bolt\Application;
 use Bolt\BaseExtension;
 use Bolt\Content;
+use Bolt\Extension\Thirdwave\ContentApi\Exception\ForbiddenException;
+use Bolt\Extension\Thirdwave\ContentApi\Exception\NotFoundException;
 use Bolt\Permissions;
 use Doctrine\DBAL\DBALException;
+use Exception;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
+use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
 
 
 /**
  * ContentApi extension for Bolt
  *
- * Copyright (C) 2014  Gawain Lynch
+ * Copyright (C) 2015  Thirdwave B.V.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +34,7 @@ use Symfony\Component\HttpFoundation\Request;
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @author    Guido Gautier <ggautier@thirdwave.nl>
- * @copyright Copyright (c) 2014, Thirdwave
+ * @copyright Copyright (c) 2015, Thirdwave
  * @license   http://opensource.org/licenses/GPL-3.0 GNU Public License 3.0
  */
 class Extension extends BaseExtension
@@ -49,7 +56,7 @@ class Extension extends BaseExtension
      */
     public function getName()
     {
-        return 'contentapi';
+        return "contentapi";
     }
 
 
@@ -60,7 +67,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return '1.0.1';
+        return "1.0.1";
     }
 
 
@@ -124,11 +131,16 @@ class Extension extends BaseExtension
     /**
      * Executed before each api call. Checks for whitelist access.
      *
-     * @param  Request $request Current request.
+     * @param  Request     $request Current request.
+     * @param  Application $app
      * @return null|JsonResponse
+     * @throws ForbiddenException
      */
-    public function before(Request $request)
+    public function before(Request $request, Application $app)
     {
+        $app->on(KernelEvents::VIEW, array($this, 'createResponse'), 128);
+        $app->on(KernelEvents::EXCEPTION, array($this, 'handleException'), 128);
+
         $client = $request->getClientIp();
 
         // By default the ip of the server running the api is whitelisted. Other
@@ -142,10 +154,7 @@ class Extension extends BaseExtension
             }
         }
 
-        return $this->app->json(array(
-          'status' => 403,
-          'error'  => 'Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.'
-        ), 403);
+        throw new ForbiddenException('Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.');
     }
 
 
@@ -307,8 +316,11 @@ class Extension extends BaseExtension
      */
     public function record($contenttype, $slugOrId, Request $request)
     {
+        $this->validateContenttype($contenttype);
+
         // Allow for custom set of return values.
-        $type = $request->get('type', 'record');
+        $type   = $request->get('type', 'record');
+        $expand = $request->get('expand');
 
         // Check if the contenttype is defined.
         if (!$this->app['storage']->getContenttype($contenttype)) {
@@ -321,7 +333,7 @@ class Extension extends BaseExtension
             return $this->app->json(array('status' => 404), 404);
         }
 
-        return $this->app->json($this->parseRecord($record, $type));
+        return $this->app->json($this->parseRecord($record, $type, $expand));
     }
 
 
@@ -487,23 +499,7 @@ class Extension extends BaseExtension
       $type = 'listing'
     ) {
         if (!empty($contenttype)) {
-            // Check if a given contenttype exists.
-            if (!$this->app['storage']->getContenttype($contenttype)) {
-                return $this->app->json(array('status' => 404), 404);
-            }
-
-            // Check if given contenttype is configured to be excluded.
-            if (in_array($contenttype, $this->config['exclude'])) {
-                return $this->app->json(array('status' => 404), 404);
-            }
-
-            // Check for permissions.
-            $user  = $this->app['users']->getCurrentUser();
-            $roles = $user ? $user['roles'] : array(Permissions::ROLE_ANONYMOUS);
-
-            if (!$this->app['permissions']->checkPermission($roles, 'view', $contenttype)) {
-                return $this->app->json(array('status' => 403), 403);
-            }
+            $this->validateContenttype($contenttype);
         }
 
         $parameters = array_merge($parameters, $where);
@@ -526,7 +522,7 @@ class Extension extends BaseExtension
         $records = array_values($records ?: array());
 
         foreach ($records as &$record) {
-            $record = $this->parseRecord($record, $type);
+            $record = $this->parseRecord($record, $type, $parameters['expand']);
         }
 
         // Set the previous and next page.
@@ -554,9 +550,10 @@ class Extension extends BaseExtension
      *
      * @param  Content $record
      * @param  string  $type
+     * @param  array   $expand
      * @return array
      */
-    protected function parseRecord(Content $record, $type = 'listing')
+    protected function parseRecord(Content $record, $type = 'listing', $expand = null)
     {
         $columns = $this->getColumns($record, $type);
         $values  = array();
@@ -594,35 +591,34 @@ class Extension extends BaseExtension
             $values['taxonomy'] = $taxonomy;
         }
 
-//    if ( $related && !empty($record->relation) ) {
-//      foreach ( $record->relation as $relation => $records ) {
-//        if ( !isset($this->config['contenttypes']) || !isset($this->config['contenttypes'][$contenttype['slug']]) ) {
-//          return $values;
-//        }
-//
-//        $config = $this->config['contenttypes'][$contenttype['slug']];
-//
-//        if ( !isset($config['related']) || !$config['related'] ) {
-//          return $values;
-//        }
-//
-//        if ( is_array($config['related']) && !in_array($relation, $config['related']) ) {
-//          continue;
-//        }
-//
-//        if ( !isset($values['related']) ) {
-//          $values['related'] = array();
-//        }
-//
-//        $values['related'][$relation] = array();
-//
-//        foreach ( $records as $id ) {
-//          $content = $this->app['storage']->getContent($relation . '/' . $id);
-//
-//          $values['related'][$relation][] = $this->parseRecord($content, $type, false);
-//        }
-//      }
-//    }
+        if (!empty($record->relation)) {
+            if (!empty($expand)) {
+                $expand = explode(',', $expand);
+
+                foreach ($record->relation as $contenttype => $items) {
+                    try {
+                        $this->validateContenttype($contenttype);
+                    } catch ( Exception $e ) {
+                        continue;
+                    }
+
+                    if (in_array($contenttype, $expand)) {
+                        $related = array();
+
+                        foreach ($items as $id) {
+                            $item = $this->app['storage']->getContent($contenttype . '/' . $id,
+                              array('status' => 'published'));
+
+                            if ($item) {
+                                $related[] = $this->parseRecord($item);
+                            }
+                        }
+
+                        $values['relations'][$contenttype] = $related;
+                    }
+                }
+            }
+        }
 
         return $values;
     }
@@ -774,7 +770,8 @@ class Extension extends BaseExtension
           'limit'  => intval($request->get('limit', $this->config['defaults']['limit'])),
           'order'  => $request->get('order', $request->get('orderby', $this->config['defaults']['order'])),
           'paging' => 1,
-          'page'   => intval($request->get('page', 1))
+          'page'   => intval($request->get('page', 1)),
+          'expand' => $request->get('expand')
         );
     }
 
@@ -821,5 +818,58 @@ class Extension extends BaseExtension
       WHERE T.taxonomytype = ?
       ORDER BY " . $order . "
     ";
+    }
+
+
+    /**
+     * @param  string $contenttype
+     * @throws ForbiddenException
+     * @throws NotFoundException
+     */
+    protected function validateContenttype($contenttype)
+    {
+        // Check if a given contenttype exists.
+        if (!$this->app['storage']->getContenttype($contenttype)) {
+            throw new NotFoundException('Contenttype ' . $contenttype . ' is not defined.');
+        }
+
+        // Check if given contenttype is configured to be excluded.
+        if (in_array($contenttype, $this->config['exclude'])) {
+            throw new ForbiddenException('Contenttype ' . $contenttype . ' is forbidden.');
+        }
+
+        // Check for permissions.
+        $user  = $this->app['users']->getCurrentUser();
+        $roles = $user ? $user['roles'] : array(Permissions::ROLE_ANONYMOUS);
+
+        if (!$this->app['permissions']->checkPermission($roles, 'view', $contenttype)) {
+            throw new ForbiddenException('No access to contenttype ' . $contenttype . '.');
+        }
+    }
+
+
+    /**
+     * Create response when controller does not return a response.
+     *
+     * @param GetResponseForControllerResultEvent $e
+     */
+    public function createResponse(GetResponseForControllerResultEvent $e)
+    {
+        $result = $e->getControllerResult();
+
+        $response = new Response($result);
+
+        $e->setResponse($response);
+    }
+
+
+    public function handleException(GetResponseForExceptionEvent $e)
+    {
+        $response = new Response();
+
+        $response->setException($e->getException());
+        $response->setContent($response);
+
+        $e->setResponse($response);
     }
 }
