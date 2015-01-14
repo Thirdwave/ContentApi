@@ -4,6 +4,11 @@ Content API for Bolt CMS
 
 Changelog
 ----------------------------
+
+## 1.0.5
+- Added record value filelist.
+- Fixed bug where custom list of fields values did not process correctly.
+
 ## 1.0.4
 - Check if file exists before getting filesize and mimetype.
 

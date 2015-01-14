@@ -681,6 +681,7 @@ class Extension extends BaseExtension
         }
 
         return array(
+          'title'     => isset($value['title']) ? $value['title'] : $value[$key],
           'file'      => $value[$key],
           'filename'  => array_pop($parts),
           'path'      => $path,
@@ -713,7 +714,7 @@ class Extension extends BaseExtension
      */
     protected function parseRecordValueImagelist($value)
     {
-        if ( empty($value) ) {
+        if (empty($value)) {
             return $value;
         }
 
@@ -724,6 +725,18 @@ class Extension extends BaseExtension
         }
 
         return $images;
+    }
+
+
+    /**
+     * Parse file list value.
+     *
+     * @param  array $value
+     * @return array
+     */
+    protected function parseRecordValueFilelist($value)
+    {
+        return $this->parseRecordValueImagelist($value);
     }
 
 
@@ -743,8 +756,16 @@ class Extension extends BaseExtension
         if (isset($this->config['contenttypes']) && isset($this->config['contenttypes'][$contenttype['slug']])) {
             $config = $this->config['contenttypes'][$contenttype['slug']];
 
+            // Type is configured with custom fields.
             if (isset($config[$type])) {
-                $columns = array_merge($columns, $config[$type]);
+                foreach ($config[$type] as $column) {
+                    // Check for mapping with contenttype field.
+                    if (isset($contenttype['fields'][$column])) {
+                        $columns[$column] = $contenttype['fields'][$column];
+                    } else {
+                        $columns[] = $column;
+                    }
+                }
             } else {
                 $columns = array_merge($columns, $contenttype['fields']);
             }
