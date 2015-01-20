@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.0.6
+- Added route for adding content.
+
 ## 1.0.5
 - Added record value filelist.
 - Fixed bug where custom list of fields values did not process correctly.

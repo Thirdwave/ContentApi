@@ -3,6 +3,7 @@
 use Bolt\Application;
 use Bolt\BaseExtension;
 use Bolt\Content;
+use Bolt\Extension\Thirdwave\ContentApi\Exception\ApiException;
 use Bolt\Extension\Thirdwave\ContentApi\Exception\ForbiddenException;
 use Bolt\Extension\Thirdwave\ContentApi\Exception\NotFoundException;
 use Bolt\Library;
@@ -103,7 +104,10 @@ class Extension extends BaseExtension
         $routes->match('/taxonomy/{taxonomytype}/{slug}', array($this, 'taxonomyContent'));
 
         // Returns a listing of records from a contenttype.
-        $routes->match('/{contenttype}', array($this, 'listing'));
+        $routes->get('/{contenttype}', array($this, 'listing'));
+
+        // Stores a contenttype item.
+        $routes->post('/{contenttype}', array($this, 'store'));
 
         // Returns the latest records for a contenttype.
         $routes->match('/{contenttype}/latest/{amount}', array($this, 'listingLatest'))->assert('amount', '[\d]+');
@@ -427,6 +431,32 @@ class Extension extends BaseExtension
         $request->query->set('page', 1);
 
         return $this->search($request);
+    }
+
+
+    /**
+     * Store content for a contenttype.
+     *
+     * @param string $contenttype
+     * @param Request     $request
+     * @param Application $app
+     * @return JsonResponse
+     * @throws ForbiddenException
+     * @throws NotFoundException
+     */
+    public function store($contenttype, Request $request, Application $app)
+    {
+        $app['users']->login(
+          $this->config['user']['username'],
+          $this->config['user']['password']
+        );
+
+        $this->validateContenttype($contenttype, 'create');
+
+        $content = $app['storage']->getContentObject($contenttype, $request->request->all());
+        $id      = $app['storage']->saveContent($content);
+
+        return $this->app->json($this->parseRecord($content, 'record'));
     }
 
 
@@ -910,11 +940,12 @@ class Extension extends BaseExtension
 
 
     /**
-     * @param  string $contenttype
+     * @param  string $contenttype Name of the contenttype to validate.
+     * @param  string $permisson   Type of permission to check.
      * @throws ForbiddenException
      * @throws NotFoundException
      */
-    protected function validateContenttype($contenttype)
+    protected function validateContenttype($contenttype, $permisson = 'view')
     {
         // Check if a given contenttype exists.
         if (!$this->app['storage']->getContenttype($contenttype)) {
@@ -930,8 +961,8 @@ class Extension extends BaseExtension
         $user  = $this->app['users']->getCurrentUser();
         $roles = $user ? $user['roles'] : array(Permissions::ROLE_ANONYMOUS);
 
-        if (!$this->app['permissions']->checkPermission($roles, 'view', $contenttype)) {
-            throw new ForbiddenException('No access to contenttype ' . $contenttype . '.');
+        if (!$this->app['permissions']->checkPermission($roles, $permisson, $contenttype)) {
+            throw new ForbiddenException('No access for permission ' . $permisson . ' to contenttype ' . $contenttype . '.');
         }
     }
 
