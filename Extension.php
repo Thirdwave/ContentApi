@@ -437,7 +437,7 @@ class Extension extends BaseExtension
     /**
      * Store content for a contenttype.
      *
-     * @param string $contenttype
+     * @param string      $contenttype
      * @param Request     $request
      * @param Application $app
      * @return JsonResponse
@@ -767,6 +767,24 @@ class Extension extends BaseExtension
     protected function parseRecordValueFilelist($value)
     {
         return $this->parseRecordValueImagelist($value);
+    }
+
+
+    /**
+     * Parse video value.
+     *
+     * @param  array $value
+     * @return mixed
+     */
+    protected function parseRecordValueVideo($value)
+    {
+        $youtubeRegEx = '%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i';
+
+        if (preg_match($youtubeRegEx, $value['url'], $match)) {
+            $value['id'] = $match[1];
+        }
+
+        return $value;
     }
 
 
