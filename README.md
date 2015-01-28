@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.0.8
+- Fix for video url's.
+
 ## 1.0.7
 - Added record parsing for getting YouTube ids from the video url.
 

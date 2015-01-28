@@ -778,6 +778,10 @@ class Extension extends BaseExtension
      */
     protected function parseRecordValueVideo($value)
     {
+        if ( !is_array($value) || empty($value['url']) ) {
+            return $value;
+        }
+
         $youtubeRegEx = '%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i';
 
         if (preg_match($youtubeRegEx, $value['url'], $match)) {
