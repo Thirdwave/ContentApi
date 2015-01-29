@@ -86,7 +86,7 @@ class Extension extends BaseExtension
 
         // Always executed before executing the call.
         $routes->before(array($this, 'before'));
-
+        
         // Returns a simple response to check if the api is working.
         $routes->match('/', array($this, 'index'));
 
@@ -144,29 +144,23 @@ class Extension extends BaseExtension
         $app->on(KernelEvents::EXCEPTION, array($this, 'handleException'), 128);
 
         $client = $request->getClientIp();
+        
+        // if false, all ips are ok
+        if ($this->config['whitelist'] === false) {
+            return null;
+        }
 
-		
-		// if false, all ips are ok
-		if ($this->config['whitelist'] === false) {
-			return null;
-		}
-		
         // By default the ip of the server running the api is whitelisted. Other
         // ip addresses need to be configured te gain access.
-
-
         $whitelist   = $this->config['whitelist'] ?: array();
         $whitelist[] = $request->server->get('SERVER_ADDR');
 
         foreach ($whitelist as $ip) {
             if (strpos($client, $ip) !== false) {
                 return null;
-
             }
-
-
         }
-
+        
         throw new ForbiddenException('Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.');
     }
 
@@ -199,17 +193,11 @@ class Extension extends BaseExtension
         // Check if the taxonomy type is configured.
         if (!$this->app['storage']->getTaxonomyType($taxonomytype)) {
             return $this->app->json(array('status' => 404), 404);
-
-
-
         }
 
         // Default ordering is by name.
         $order = $request->query->get('order', $request->get('orderby', 'name'));
-
-
-
-
+        
         // Translate the order to the correct query order statement.
         switch ($order) {
             case 'name':
@@ -223,33 +211,17 @@ class Extension extends BaseExtension
                 $order = 'results DESC';
                 break;
             default:
-
-
                 return $this->app->json(array(
                   'status' => 500,
                   'error'  => 'Invalid orderby. Options are name and count.'
-
-
-
                 ), 500);
         }
 
         try {
             $values = $this->app['db']->executeQuery($this->getTaxonomyQuery($order),
-
-
-
-              array($taxonomytype))->fetchAll();
-
-
+                array($taxonomytype))->fetchAll();
         } catch ( DBALException $e ) {
             return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500);
-
-
-
-
-
-
         }
 
         return $this->app->json(array(
