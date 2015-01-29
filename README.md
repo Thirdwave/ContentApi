@@ -5,6 +5,12 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.0.6
+- Added whitelist false for open access
+- Added accept header for CORS
+- Fixed bug for sqlite
+- Fixed version number
+
 ## 1.0.5
 - Added record value filelist.
 - Fixed bug where custom list of fields values did not process correctly.
