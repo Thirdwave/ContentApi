@@ -15,6 +15,7 @@ use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
+header("Access-Control-Allow-Origin: *"); //FIXME big fat ugly hack, please move.
 
 /**
  * ContentApi extension for Bolt
@@ -144,15 +145,26 @@ class Extension extends BaseExtension
 
         $client = $request->getClientIp();
 
+		
+		// if false, all ips are ok
+		if ($this->config['whitelist'] === false) {
+			return null;
+		}
+		
         // By default the ip of the server running the api is whitelisted. Other
         // ip addresses need to be configured te gain access.
+
+
         $whitelist   = $this->config['whitelist'] ?: array();
         $whitelist[] = $request->server->get('SERVER_ADDR');
 
         foreach ($whitelist as $ip) {
             if (strpos($client, $ip) !== false) {
                 return null;
+
             }
+
+
         }
 
         throw new ForbiddenException('Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.');
@@ -187,15 +199,21 @@ class Extension extends BaseExtension
         // Check if the taxonomy type is configured.
         if (!$this->app['storage']->getTaxonomyType($taxonomytype)) {
             return $this->app->json(array('status' => 404), 404);
+
+
+
         }
 
         // Default ordering is by name.
         $order = $request->query->get('order', $request->get('orderby', 'name'));
 
+
+
+
         // Translate the order to the correct query order statement.
         switch ($order) {
             case 'name':
-                $order = 'T.name';
+                $order = 'name';
                 break;
             case 'count':
                 $order = 'results';
@@ -205,17 +223,33 @@ class Extension extends BaseExtension
                 $order = 'results DESC';
                 break;
             default:
+
+
                 return $this->app->json(array(
                   'status' => 500,
                   'error'  => 'Invalid orderby. Options are name and count.'
+
+
+
                 ), 500);
         }
 
         try {
             $values = $this->app['db']->executeQuery($this->getTaxonomyQuery($order),
-              array($taxonomytype, $taxonomytype))->fetchAll();
+
+
+
+              array($taxonomytype))->fetchAll();
+
+
         } catch ( DBALException $e ) {
             return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500);
+
+
+
+
+
+
         }
 
         return $this->app->json(array(
@@ -895,17 +929,18 @@ class Extension extends BaseExtension
      */
     protected function getTaxonomyQuery($order)
     {
-        return "
-      SELECT
-        # Make sure we only select unique taxonomy values
-        DISTINCT(T.name),
-        T.slug,
-        # Get the content count for each taxonomy value.
-        (SELECT COUNT(TC.id) FROM " . $this->getTableName('taxonomy') . " TC WHERE TC.taxonomytype = ? AND TC.slug = T.slug ) AS results
-      FROM " . $this->getTableName('taxonomy') . " T
-      WHERE T.taxonomytype = ?
-      ORDER BY " . $order . "
-    ";
+        $tableName = $this->getTableName('taxonomy');
+        $sql = "
+            SELECT
+                DISTINCT(name),
+                slug,
+                COUNT(name) AS results
+            FROM {$tableName}
+            WHERE taxonomytype = ?
+            GROUP BY name
+            ORDER BY {$order}
+        ";
+        return $sql;
     }
 
 
