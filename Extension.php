@@ -16,6 +16,7 @@ use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
+header("Access-Control-Allow-Origin: *"); //FIXME big fat ugly hack, please move.
 
 /**
  * ContentApi extension for Bolt
@@ -69,7 +70,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.0.1";
+        return "1.0.6";
     }
 
 
@@ -86,7 +87,7 @@ class Extension extends BaseExtension
 
         // Always executed before executing the call.
         $routes->before(array($this, 'before'));
-
+        
         // Returns a simple response to check if the api is working.
         $routes->match('/', array($this, 'index'));
 
@@ -147,6 +148,11 @@ class Extension extends BaseExtension
         $app->on(KernelEvents::EXCEPTION, array($this, 'handleException'), 128);
 
         $client = $request->getClientIp();
+        
+        // if false, all ips are ok
+        if ($this->config['whitelist'] === false) {
+            return null;
+        }
 
         // By default the ip of the server running the api is whitelisted. Other
         // ip addresses need to be configured te gain access.
@@ -158,7 +164,7 @@ class Extension extends BaseExtension
                 return null;
             }
         }
-
+        
         throw new ForbiddenException('Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.');
     }
 
@@ -195,11 +201,11 @@ class Extension extends BaseExtension
 
         // Default ordering is by name.
         $order = $request->query->get('order', $request->get('orderby', 'name'));
-
+        
         // Translate the order to the correct query order statement.
         switch ($order) {
             case 'name':
-                $order = 'T.name';
+                $order = 'name';
                 break;
             case 'count':
                 $order = 'results';
@@ -217,7 +223,7 @@ class Extension extends BaseExtension
 
         try {
             $values = $this->app['db']->executeQuery($this->getTaxonomyQuery($order),
-              array($taxonomytype, $taxonomytype))->fetchAll();
+                array($taxonomytype))->fetchAll();
         } catch ( DBALException $e ) {
             return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500);
         }
@@ -947,17 +953,18 @@ class Extension extends BaseExtension
      */
     protected function getTaxonomyQuery($order)
     {
-        return "
-      SELECT
-        # Make sure we only select unique taxonomy values
-        DISTINCT(T.name),
-        T.slug,
-        # Get the content count for each taxonomy value.
-        (SELECT COUNT(TC.id) FROM " . $this->getTableName('taxonomy') . " TC WHERE TC.taxonomytype = ? AND TC.slug = T.slug ) AS results
-      FROM " . $this->getTableName('taxonomy') . " T
-      WHERE T.taxonomytype = ?
-      ORDER BY " . $order . "
-    ";
+        $tableName = $this->getTableName('taxonomy');
+        $sql = "
+            SELECT
+                DISTINCT(name),
+                slug,
+                COUNT(name) AS results
+            FROM {$tableName}
+            WHERE taxonomytype = ?
+            GROUP BY name
+            ORDER BY {$order}
+        ";
+        return $sql;
     }
 
 

@@ -7,6 +7,10 @@ Changelog
 
 ## 1.0.8
 - Fix for video url's.
+- Added whitelist false for open access
+- Added accept header for CORS
+- Fixed bug for sqlite
+- Fixed version number
 
 ## 1.0.7
 - Added record parsing for getting YouTube ids from the video url.
