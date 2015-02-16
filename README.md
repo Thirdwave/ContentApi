@@ -5,6 +5,10 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.0.10
+- Moved accept header for CORS
+- [Bugfix] Search works with filter and extra where parameters
+
 ## 1.0.9
 - Added whitelist false for open access
 - Added accept header for CORS

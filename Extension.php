@@ -3,7 +3,6 @@
 use Bolt\Application;
 use Bolt\BaseExtension;
 use Bolt\Content;
-use Bolt\Extension\Thirdwave\ContentApi\Exception\ApiException;
 use Bolt\Extension\Thirdwave\ContentApi\Exception\ForbiddenException;
 use Bolt\Extension\Thirdwave\ContentApi\Exception\NotFoundException;
 use Bolt\Library;
@@ -16,7 +15,6 @@ use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-header("Access-Control-Allow-Origin: *"); //FIXME big fat ugly hack, please move.
 
 /**
  * ContentApi extension for Bolt
@@ -70,7 +68,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.0.9";
+        return "1.0.10";
     }
 
 
@@ -87,7 +85,7 @@ class Extension extends BaseExtension
 
         // Always executed before executing the call.
         $routes->before(array($this, 'before'));
-        
+
         // Returns a simple response to check if the api is working.
         $routes->match('/', array($this, 'index'));
 
@@ -148,7 +146,7 @@ class Extension extends BaseExtension
         $app->on(KernelEvents::EXCEPTION, array($this, 'handleException'), 128);
 
         $client = $request->getClientIp();
-        
+
         // if false, all ips are ok
         if ($this->config['whitelist'] === false) {
             return null;
@@ -164,7 +162,7 @@ class Extension extends BaseExtension
                 return null;
             }
         }
-        
+
         throw new ForbiddenException('Access from IP ' . $this->app['request']->getClientIp() . ' is not allowed.');
     }
 
@@ -176,7 +174,9 @@ class Extension extends BaseExtension
      */
     public function index()
     {
-        return $this->app->json(array('it' => 'works'));
+        return $this->app->json(array('it' => 'works'), 200, array(
+          'Access-Control-Allow-Origin' => '*'
+        ));
     }
 
 
@@ -196,12 +196,14 @@ class Extension extends BaseExtension
     {
         // Check if the taxonomy type is configured.
         if (!$this->app['storage']->getTaxonomyType($taxonomytype)) {
-            return $this->app->json(array('status' => 404), 404);
+            return $this->app->json(array('status' => 404), 404, array(
+              'Access-Control-Allow-Origin' => '*'
+            ));
         }
 
         // Default ordering is by name.
         $order = $request->query->get('order', $request->get('orderby', 'name'));
-        
+
         // Translate the order to the correct query order statement.
         switch ($order) {
             case 'name':
@@ -218,20 +220,26 @@ class Extension extends BaseExtension
                 return $this->app->json(array(
                   'status' => 500,
                   'error'  => 'Invalid orderby. Options are name and count.'
-                ), 500);
+                ), 500, array(
+                  'Access-Control-Allow-Origin' => '*'
+                ));
         }
 
         try {
             $values = $this->app['db']->executeQuery($this->getTaxonomyQuery($order),
-                array($taxonomytype))->fetchAll();
+              array($taxonomytype))->fetchAll();
         } catch ( DBALException $e ) {
-            return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500);
+            return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500, array(
+              'Access-Control-Allow-Origin' => '*'
+            ));
         }
 
         return $this->app->json(array(
           'type'   => $taxonomytype,
           'count'  => count($values),
           'values' => $values
+        ), array(
+          'Access-Control-Allow-Origin' => '*'
         ));
     }
 
@@ -248,7 +256,9 @@ class Extension extends BaseExtension
     {
         // Check if the taxonomy type is configured.
         if (!$this->app['storage']->getTaxonomyType($taxonomytype)) {
-            return $this->app->json(array('status' => 404), 404);
+            return $this->app->json(array('status' => 404), 404, array(
+              'Access-Control-Allow-Origin' => '*'
+            ));
         }
 
         $parameters                 = $this->getParametersFromRequest($request);
@@ -335,16 +345,22 @@ class Extension extends BaseExtension
 
         // Check if the contenttype is defined.
         if (!$this->app['storage']->getContenttype($contenttype)) {
-            return $this->app->json(array('status' => 404), 404);
+            return $this->app->json(array('status' => 404), 404, array(
+              'Access-Control-Allow-Origin' => '*'
+            ));
         }
 
         $record = $this->app['storage']->getContent($contenttype . '/' . $slugOrId);
 
         if (!$record) {
-            return $this->app->json(array('status' => 404), 404);
+            return $this->app->json(array('status' => 404), 404, array(
+              'Access-Control-Allow-Origin' => '*'
+            ));
         }
 
-        return $this->app->json($this->parseRecord($record, $type, $expand));
+        return $this->app->json($this->parseRecord($record, $type, $expand), 200, array(
+          'Access-Control-Allow-Origin' => '*'
+        ));
     }
 
 
@@ -371,19 +387,20 @@ class Extension extends BaseExtension
         $type   = $request->get('type', 'search');
 
         if (empty($filter)) {
-            return $this->app->json(array('status' => 500, 'error' => 'Missing filter.'), 500);
+            return $this->app->json(array('status' => 500, 'error' => 'Missing filter.'), 500, array(
+              'Access-Control-Allow-Origin' => '*'
+            ));
         }
 
         // Create a list of the requested contenttypes or list all contenttypes.
         $types = $request->get('contenttypes', implode(',', array_keys($this->contenttypes)));
 
-        $query      = '(' . $types . ')/search';
+        $query      = '(' . $types . ')';
         $parameters = $this->getParametersFromRequest($request);
         $where      = $this->getWhereFromRequest($request);
 
         // Set the search term and contenttypes.
-        $parameters['filter']       = $filter;
-        $parameters['contenttypes'] = explode(',', $types);
+        $parameters['filter'] = $filter;
 
         return $this->listingResponse($query, $parameters, $where, $contenttype, $type);
     }
@@ -462,28 +479,37 @@ class Extension extends BaseExtension
         $content = $app['storage']->getContentObject($contenttype, $request->request->all());
         $id      = $app['storage']->saveContent($content);
 
-        return $this->app->json($this->parseRecord($content, 'record'));
+        return $this->app->json($this->parseRecord($content, 'record'), 200, array(
+          'Access-Control-Allow-Origin' => '*'
+        ));
     }
 
 
     /**
      * Returns search results.
      *
-     * @param  array $parameters Parameters for getting content.
-     * @param  array $where      Extra where parameters.
-     * @param  array $paging     Array passed by reference.
-     * @return array
+     * @param      array $parameters Parameters for getting content.
+     * @param      array $where      Extra where parameters.
+     * @param      array $paging     Array passed by reference.
+     * @return     array
+     * @deprecated since 1.0.10
      */
     protected function getSearchResults(array $parameters, array $where, array &$paging)
     {
         $offset       = ($parameters['page'] - 1) * $parameters['limit'];
         $contenttypes = $parameters['contenttypes'];
 
+        $query = '(' . implode(',', $parameters['contenttypes']) . ',nieuws)';
+
+        unset($parameters['contenttypes']);
+
         try {
             $result = $this->app['storage']->searchContent($parameters['filter'], $contenttypes, $where,
               $parameters['limit'], $offset);
         } catch ( DBALException $e ) {
-            return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500);
+            return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500, array(
+              'Access-Control-Allow-Origin' => '*'
+            ));
         }
 
         $paging = array(
@@ -542,17 +568,15 @@ class Extension extends BaseExtension
         $parameters = array_merge($parameters, $where);
         $paging     = array();
 
-        if ($type === 'search') {
-            $records = $this->getSearchResults($parameters, $where, $paging);
+        if ($type === 'taxonomy') {
+            $records = $this->getTaxonomyContent($parameters, $paging);
         } else {
-            if ($type === 'taxonomy') {
-                $records = $this->getTaxonomyContent($parameters, $paging);
-            } else {
-                try {
-                    $records = $this->app['storage']->getContent($query, $parameters, $paging);
-                } catch ( DBALException $e ) {
-                    return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500);
-                }
+            try {
+                $records = $this->app['storage']->getContent($query, $parameters, $paging);
+            } catch ( DBALException $e ) {
+                return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500, array(
+                  'Access-Control-Allow-Origin' => '*'
+                ));
             }
         }
 
@@ -578,6 +602,8 @@ class Extension extends BaseExtension
           'type'        => $type,
           'query'       => $query,
           'parameters'  => $parameters
+        ), 200, array(
+          'Access-Control-Allow-Origin' => '*'
         ));
     }
 
@@ -784,7 +810,7 @@ class Extension extends BaseExtension
      */
     protected function parseRecordValueVideo($value)
     {
-        if ( !is_array($value) || empty($value['url']) ) {
+        if (!is_array($value) || empty($value['url'])) {
             return $value;
         }
 
@@ -954,7 +980,7 @@ class Extension extends BaseExtension
     protected function getTaxonomyQuery($order)
     {
         $tableName = $this->getTableName('taxonomy');
-        $sql = "
+        $sql       = "
             SELECT
                 DISTINCT(name),
                 slug,
