@@ -68,7 +68,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.0.10";
+        return "1.0.11";
     }
 
 
@@ -291,7 +291,14 @@ class Extension extends BaseExtension
         $parameters = $this->getParametersFromRequest($request);
         $where      = $this->getWhereFromRequest($request);
 
-        return $this->listingResponse($contenttype, $parameters, $where, $contenttype, $type);
+        // Allow for random sorting.
+        if (!empty($parameters['order']) && $parameters['order'] === 'RANDOM') {
+            $query = $contenttype . '/random/' . $parameters['limit'];
+        } else {
+            $query = $contenttype;
+        }
+
+        return $this->listingResponse($query, $parameters, $where, $contenttype, $type);
     }
 
 
@@ -567,6 +574,13 @@ class Extension extends BaseExtension
 
         $parameters = array_merge($parameters, $where);
         $paging     = array();
+        $random     = false;
+
+        // Allow random search results.
+        if ($type === 'search' && !empty($parameters['order']) && $parameters['order'] === 'RANDOM') {
+            unset($parameters['order']);
+            $random = true;
+        }
 
         if ($type === 'taxonomy') {
             $records = $this->getTaxonomyContent($parameters, $paging);
@@ -584,6 +598,10 @@ class Extension extends BaseExtension
 
         foreach ($records as &$record) {
             $record = $this->parseRecord($record, $type, $parameters['expand']);
+        }
+
+        if ($random) {
+            shuffle($records);
         }
 
         // Set the previous and next page.

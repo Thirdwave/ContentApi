@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.0.11
+- Allow random sorting for listing and searching with order=RANDOM
+
 ## 1.0.10
 - Moved accept header for CORS
 - [Bugfix] Search works with filter and extra where parameters
