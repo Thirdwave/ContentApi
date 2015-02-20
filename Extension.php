@@ -119,6 +119,9 @@ class Extension extends BaseExtension
         // Returns search results for a contenttype.
         $routes->match('/{contenttype}/search', array($this, 'searchContenttype'));
 
+        // Returns field definition for a contenttype.
+        $routes->match('/{contenttype}/fields', array($this, 'fields'));
+
         // Returns telephone book like filters with count.
         $routes->match('/{contenttype}/{field}/abc', array($this, 'abc'));
 
@@ -345,6 +348,26 @@ class Extension extends BaseExtension
         }
 
         return $this->app->json($abc, 200, array(
+          'Access-Control-Allow-Origin' => '*'
+        ));
+    }
+
+
+    /**
+     * Returns field definition for a contenttype.
+     *
+     * @param  string $contenttype
+     * @return JsonResponse
+     * @throws ForbiddenException
+     * @throws NotFoundException
+     */
+    public function fields($contenttype)
+    {
+        $this->validateContenttype($contenttype);
+
+        $contenttype = $this->app['storage']->getContenttype($contenttype);
+
+        return $this->app->json($contenttype['fields'], 200, array(
           'Access-Control-Allow-Origin' => '*'
         ));
     }
