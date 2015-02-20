@@ -320,6 +320,8 @@ class Extension extends BaseExtension
      */
     public function abc($contenttype, $field, Application $app)
     {
+        $this->validateContenttype($contenttype);
+
         $abc = array('#' => 0);
 
         foreach (range('A', 'Z') as $letter) {
