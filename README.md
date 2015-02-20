@@ -5,6 +5,10 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.0
+- Added call for returning telephone book like filters with count for a contenttype and field. 
+- Added call for returning field definition for a contenttype.
+
 ## 1.0.11
 - Allow random sorting for listing and searching with order=RANDOM
 
