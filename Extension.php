@@ -109,17 +109,22 @@ class Extension extends BaseExtension
         $routes->post('/{contenttype}', array($this, 'store'));
 
         // Returns the latest records for a contenttype.
-        $routes->match('/{contenttype}/latest/{amount}', array($this, 'listingLatest'))->assert('amount', '[\d]+');
+        $routes->match('/{contenttype}/latest/{amount}', array($this, 'listingLatest'))
+          ->assert('amount', '[\d]+');
 
         // Returns the first records for a contenttype.
-        $routes->match('/{contenttype}/first/{amount}', array($this, 'listingFirst'))->assert('amount', '[\d]+');
+        $routes->match('/{contenttype}/first/{amount}', array($this, 'listingFirst'))
+          ->assert('amount', '[\d]+');
 
         // Returns search results for a contenttype.
         $routes->match('/{contenttype}/search', array($this, 'searchContenttype'));
 
+        // Returns telephone book like filters with count.
+        $routes->match('/{contenttype}/{field}/abc', array($this, 'abc'));
+
         // Returns a number of search results for a contenttype.
-        $routes->match('/{contenttype}/search/{amount}', array($this, 'searchContenttypeAmount'))->assert('amount',
-          '[\d]+');
+        $routes->match('/{contenttype}/search/{amount}', array($this, 'searchContenttypeAmount'))
+          ->assert('amount', '[\d]+');
 
         // Returns a single record from a contenttype by slug or id.
         $routes->match('/{contenttype}/{slugOrId}', array($this, 'record'));
@@ -299,6 +304,49 @@ class Extension extends BaseExtension
         }
 
         return $this->listingResponse($query, $parameters, $where, $contenttype, $type);
+    }
+
+
+    /**
+     * Returns telephone book like filters with count.
+     *
+     * @param string      $contenttype
+     * @param string      $field
+     * @param Application $app
+     * @return JsonResponse
+     */
+    public function abc($contenttype, $field, Application $app)
+    {
+        $abc = array('#' => 0);
+
+        foreach (range('A', 'Z') as $letter) {
+            $abc[$letter] = 0;
+        }
+
+        $tableName = $this->getTableName($contenttype);
+        $sql       = "
+            SELECT
+                SUBSTR({$field}, 1, 1) AS letter,
+                COUNT(SUBSTR({$field}, 1, 1)) AS rows
+            FROM {$tableName}
+            WHERE status = 'published'
+            GROUP BY letter
+            ORDER BY {$field} ASC
+        ";
+
+        $result = $app['db']->executeQuery($sql)->fetchAll();
+
+        foreach ($result as $row) {
+            if (empty($row['letter'])) {
+                $abc['#'] = intval($row['rows']);
+            } else {
+                $abc[strtoupper($row['letter'])] = intval($row['rows']);
+            }
+        }
+
+        return $this->app->json($abc, 200, array(
+          'Access-Control-Allow-Origin' => '*'
+        ));
     }
 
 
