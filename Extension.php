@@ -313,9 +313,9 @@ class Extension extends BaseExtension
     /**
      * Returns telephone book like filters with count.
      *
-     * @param string      $contenttype
-     * @param string      $field
-     * @param Application $app
+     * @param  string      $contenttype
+     * @param  string      $field
+     * @param  Application $app
      * @return JsonResponse
      */
     public function abc($contenttype, $field, Application $app)
