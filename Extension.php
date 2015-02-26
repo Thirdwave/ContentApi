@@ -43,6 +43,12 @@ class Extension extends BaseExtension
 
 
     /**
+     * @var array
+     */
+    protected $config;
+
+
+    /**
      * Quick access to all configured contenttype from Bolt.
      *
      * @var array
@@ -68,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.0";
+        return "1.1.1";
     }
 
 
@@ -182,7 +188,7 @@ class Extension extends BaseExtension
      */
     public function index()
     {
-        return $this->app->json(array('it' => 'works'), 200, array(
+        return $this->app->json(array('it' => 'works', $this->getName() => $this->getVersion()), 200, array(
           'Access-Control-Allow-Origin' => '*'
         ));
     }
@@ -299,11 +305,19 @@ class Extension extends BaseExtension
         $parameters = $this->getParametersFromRequest($request);
         $where      = $this->getWhereFromRequest($request);
 
-        // Allow for random sorting.
-        if (!empty($parameters['order']) && $parameters['order'] === 'RANDOM') {
-            $query = $contenttype . '/random/' . $parameters['limit'];
+        // Allow results from multiple or all contenttypes. Note that this does
+        // not work with RANDOM sorting and gives false results when using a where
+        // parameter on fields that do not exist in ALL requested contenttypes.
+        if ($contenttype === 'listing') {
+            $types       = $request->get('contenttypes', implode(',', array_keys($this->contenttypes)));
+            $query       = '(' . $types . ')';
+            $contenttype = null;
         } else {
             $query = $contenttype;
+        }
+
+        if (!empty($parameters['order']) && $parameters['order'] === 'RANDOM') {
+            $query = $query . '/random/' . $parameters['limit'];
         }
 
         return $this->listingResponse($query, $parameters, $where, $contenttype, $type);
@@ -409,7 +423,6 @@ class Extension extends BaseExtension
      * Query parameters:
      * type Name of the response type. Default is record.
      *
-     * @todo   Check if contenttype is configured to be excluded and permissions.
      * @param  string         $contenttype Contenttype to get record for.
      * @param  string|integer $slugOrId    Slug or id of the record.
      * @param  Request        $request     Current request.
@@ -557,7 +570,8 @@ class Extension extends BaseExtension
         $this->validateContenttype($contenttype, 'create');
 
         $content = $app['storage']->getContentObject($contenttype, $request->request->all());
-        $id      = $app['storage']->saveContent($content);
+
+        $app['storage']->saveContent($content);
 
         return $this->app->json($this->parseRecord($content, 'record'), 200, array(
           'Access-Control-Allow-Origin' => '*'
@@ -579,7 +593,7 @@ class Extension extends BaseExtension
         $offset       = ($parameters['page'] - 1) * $parameters['limit'];
         $contenttypes = $parameters['contenttypes'];
 
-        $query = '(' . implode(',', $parameters['contenttypes']) . ',nieuws)';
+        //$query = '(' . implode(',', $parameters['contenttypes']) . ',nieuws)';
 
         unset($parameters['contenttypes']);
 
@@ -719,9 +733,9 @@ class Extension extends BaseExtension
             }
 
             if ($name === 'contenttype') {
-                foreach ($this->contenttypes as $name => $contenttype) {
+                foreach ($this->contenttypes as $key => $contenttype) {
                     if ($record->contenttype['slug'] === $contenttype['slug']) {
-                        $values['contenttype'] = $name;
+                        $values['contenttype'] = $key;
                     }
                 }
             } else {
@@ -781,8 +795,8 @@ class Extension extends BaseExtension
     /**
      * Parse a record value. Returns the parsed value.
      *
-     * @param  $type        Type of value to parse.
-     * @param  $value       Value to parse.
+     * @param  $type
+     * @param  $value
      * @return array|string
      */
     protected function parseRecordValue($type, $value)
@@ -1006,6 +1020,8 @@ class Extension extends BaseExtension
                 }
             }
         }
+
+        return $baseColumns;
     }
 
 
@@ -1065,7 +1081,7 @@ class Extension extends BaseExtension
     /**
      * Returns the query for getting a list of taxonomy values.
      *
-     * @param  strig $order Field to be used for sorting.
+     * @param  string $order Field to be used for sorting.
      * @return string
      */
     protected function getTaxonomyQuery($order)
