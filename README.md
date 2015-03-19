@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.2
+- [Bugfix] Config is now public property.
+
 ## 1.1.1
 - [Feature] Added call for listing results of more contenttypes.
 - [Feature] Index call now returns the version of the Content API.

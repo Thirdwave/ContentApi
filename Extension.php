@@ -45,7 +45,7 @@ class Extension extends BaseExtension
     /**
      * @var array
      */
-    protected $config;
+    public $config;
 
 
     /**
@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.1";
+        return "1.1.2";
     }
 
 
