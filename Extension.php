@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.2";
+        return "1.1.3";
     }
 
 
@@ -659,14 +659,22 @@ class Extension extends BaseExtension
             $this->validateContenttype($contenttype);
         }
 
-        $parameters = array_merge($parameters, $where);
-        $paging     = array();
-        $random     = false;
+        $parameters    = array_merge($parameters, $where);
+        $paging        = array();
+        $random        = false;
+        $default_order = false;
 
         // Allow random search results.
         if ($type === 'search' && !empty($parameters['order']) && $parameters['order'] === 'RANDOM') {
             unset($parameters['order']);
             $random = true;
+        }
+
+        // Check if default order was given. This is used to sort content that has grouping
+        // taxonomy.
+        if (!empty($parameters['default_order'])) {
+            unset($parameters['default_order']);
+            $default_order = true;
         }
 
         if ($type === 'taxonomy') {
@@ -682,6 +690,15 @@ class Extension extends BaseExtension
         }
 
         $records = array_values($records ?: array());
+
+        // Sort grouping content when no specific order was given.
+        if ( $default_order && count($records) > 0 ) {
+            if ( !empty($records[0]->group) ) {
+                usort($records, function($a, $b) {
+                    return ($a->group['order'] < $b->group['order']) ? -1 : 1;
+                });
+            }
+        }
 
         foreach ($records as &$record) {
             $record = $this->parseRecord($record, $type, $parameters['expand']);
@@ -1045,13 +1062,20 @@ class Extension extends BaseExtension
      */
     protected function getParametersFromRequest(Request $request)
     {
-        return array(
+        $parameters = array(
           'limit'  => intval($request->get('limit', $this->config['defaults']['limit'])),
-          'order'  => $request->get('order', $request->get('orderby', $this->config['defaults']['order'])),
+          'order'  => $request->get('order', $request->get('orderby')),
           'paging' => 1,
           'page'   => intval($request->get('page', 1)),
           'expand' => $request->get('expand')
         );
+
+        if ( empty($parameters['order']) ) {
+            $parameters['default_order'] = true;
+            $parameters['order'] = $this->config['defaults']['order'];
+        }
+
+        return $parameters;
     }
 
 

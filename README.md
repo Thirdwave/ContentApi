@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.3
+- [Feature] When sorting by the default order 'grouped' content will be sorted by index.
+
 ## 1.1.2
 - [Bugfix] Config is now public property.
 
