@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.5";
+        return "1.1.6";
     }
 
 
@@ -806,7 +806,7 @@ class Extension extends BaseExtension
                               array('status' => 'published'));
 
                             if ($item) {
-                                $related[] = $this->parseRecord($item);
+                                $related[] = $this->parseRecord($item, $type);
                             }
                         }
 

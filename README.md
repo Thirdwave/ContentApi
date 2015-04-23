@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.6
+- [Bugfix] Related content with selected resultset.
+
 ## 1.1.5
 - [Bugfix] Correction in default group sorting.
 
