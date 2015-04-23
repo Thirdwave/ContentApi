@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.5
+- [Bugfix] Correction in default group sorting.
+
 ## 1.1.4
 - [Bugfix] Correct status code for taxonomy.
 

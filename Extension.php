@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.4";
+        return "1.1.5";
     }
 
 
@@ -692,12 +692,23 @@ class Extension extends BaseExtension
         $records = array_values($records ?: array());
 
         // Sort grouping content when no specific order was given.
+        // Sort grouping content when no specific order was given.
         if ( $default_order && count($records) > 0 ) {
-            if ( !empty($records[0]->group) ) {
-                usort($records, function($a, $b) {
-                    return ($a->group['order'] < $b->group['order']) ? -1 : 1;
-                });
-            }
+            usort($records, function($a, $b) {
+                if ( !empty($a->group) && empty($b->group) ) {
+                    return -1;
+                } else if ( empty($a->group) && !empty($b->group) ) {
+                    return -1;
+                } else if ( !empty($a->group) && !empty($b->group) ) {
+                    if ( $a->group['slug'] !== $b->group['slug'] ) {
+                        return strcmp($a->group['slug'], $b->group['slug']);
+                    } else {
+                        return ($a->group['order'] < $b->group['order']) ? -1 : 1;
+                    }
+                } else {
+                    return 0;
+                }
+            });
         }
 
         foreach ($records as &$record) {
