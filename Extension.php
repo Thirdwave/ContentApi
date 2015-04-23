@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.3";
+        return "1.1.4";
     }
 
 
@@ -252,7 +252,7 @@ class Extension extends BaseExtension
           'type'   => $taxonomytype,
           'count'  => count($values),
           'values' => $values
-        ), array(
+        ), 200, array(
           'Access-Control-Allow-Origin' => '*'
         ));
     }

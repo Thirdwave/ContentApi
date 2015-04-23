@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.4
+- [Bugfix] Correct status code for taxonomy.
+
 ## 1.1.3
 - [Feature] When sorting by the default order 'grouped' content will be sorted by index.
 
