@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.6";
+        return "1.1.7";
     }
 
 
@@ -1076,7 +1076,7 @@ class Extension extends BaseExtension
         $parameters = array(
           'limit'  => intval($request->get('limit', $this->config['defaults']['limit'])),
           'order'  => $request->get('order', $request->get('orderby')),
-          'paging' => 1,
+          'paging' => true,
           'page'   => intval($request->get('page', 1)),
           'expand' => $request->get('expand')
         );

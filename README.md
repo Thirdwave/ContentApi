@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.7
+- [Bugfix] Paging is by default set to `true` instead of `1`.
+
 ## 1.1.6
 - [Bugfix] Related content with selected resultset.
 
