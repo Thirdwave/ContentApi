@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.8
+- [Bugfix] Correct default sorting for non grouped content.
+
 ## 1.1.7
 - [Bugfix] Paging is by default set to `true` instead of `1`.
 
