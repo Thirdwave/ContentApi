@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.8";
+        return "1.1.9";
     }
 
 
@@ -158,6 +158,8 @@ class Extension extends BaseExtension
     {
         $app->on(KernelEvents::VIEW, array($this, 'createResponse'), 128);
         $app->on(KernelEvents::EXCEPTION, array($this, 'handleException'), 128);
+
+        $app['htmlsnippets'] = false;
 
         $client = $request->getClientIp();
 

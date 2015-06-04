@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.9
+- [Bugfix] Turn of html snippets for API calls.
+
 ## 1.1.8
 - [Bugfix] Correct default sorting for non grouped content.
 
