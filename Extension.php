@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.9";
+        return "1.1.10";
     }
 
 
@@ -677,6 +677,11 @@ class Extension extends BaseExtension
         if (!empty($parameters['default_order'])) {
             unset($parameters['default_order']);
             $default_order = true;
+        }
+
+        // Only get published content by default.
+        if ( !isset($parameters['status']) ) {
+            $parameters['status'] = 'published';
         }
 
         if ($type === 'taxonomy') {

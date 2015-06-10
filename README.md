@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.10
+- [Bugfix] Only get published content by default.
+
 ## 1.1.9
 - [Bugfix] Turn of html snippets for API calls.
 
