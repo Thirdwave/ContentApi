@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.11
+- [Feature] Local IP address is whitelisted.
+
 ## 1.1.10
 - [Bugfix] Only get published content by default.
 

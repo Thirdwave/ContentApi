@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.10";
+        return "1.1.11";
     }
 
 
