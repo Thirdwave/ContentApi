@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.11";
+        return "1.1.12";
     }
 
 
@@ -688,6 +688,16 @@ class Extension extends BaseExtension
             $records = $this->getTaxonomyContent($parameters, $paging);
         } else {
             try {
+                if ( !empty($parameters['relation']) && !empty($contenttype) ) {
+                    $relation = $parameters['relation'];
+                    $to       = array_keys($relation);
+                    $id       = array_values($relation);
+
+                    unset($parameters['relation']);
+
+                    $this->addRelatedParameter($contenttype, $to[0], $id[0], $parameters);
+                }
+
                 $records = $this->app['storage']->getContent($query, $parameters, $paging);
             } catch ( DBALException $e ) {
                 return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500, array(
@@ -750,6 +760,34 @@ class Extension extends BaseExtension
         ), 200, array(
           'Access-Control-Allow-Origin' => '*'
         ));
+    }
+
+
+    protected function addRelatedParameter($from, $to, $id, array &$parameters) {
+        try {
+            $rows = $this->app['db']->executeQuery("
+              SELECT
+                from_id
+              FROM " . $this->getTableName('relations') . "
+              WHERE
+                from_contenttype = ?
+                AND to_contenttype = ?
+                AND to_id = ?
+            ", array($from, $to, $id))->fetchAll();
+        } catch ( DBALException $e ) {
+            return $this->app->json(array('status' => 500, 'error' => $e->getMessage()), 500, array(
+              'Access-Control-Allow-Origin' => '*'
+            ));
+        }
+
+        $ids = array();
+        foreach ( $rows as $row ) {
+            $ids[] = $row['from_id'];
+        }
+
+        $parameters['id'] = implode(' || ', $ids);
+
+        return null;
     }
 
 
@@ -1086,11 +1124,12 @@ class Extension extends BaseExtension
     protected function getParametersFromRequest(Request $request)
     {
         $parameters = array(
-          'limit'  => intval($request->get('limit', $this->config['defaults']['limit'])),
-          'order'  => $request->get('order', $request->get('orderby')),
-          'paging' => true,
-          'page'   => intval($request->get('page', 1)),
-          'expand' => $request->get('expand')
+          'limit'    => intval($request->get('limit', $this->config['defaults']['limit'])),
+          'order'    => $request->get('order', $request->get('orderby')),
+          'paging'   => true,
+          'page'     => intval($request->get('page', 1)),
+          'expand'   => $request->get('expand'),
+          'relation' => $request->get('relation')
         );
 
         if ( empty($parameters['order']) ) {

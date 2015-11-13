@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.12
+- [Feature] Added an option to request items based on related item.
+
 ## 1.1.11
 - [Feature] Local IP address is whitelisted.
 
