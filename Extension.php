@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.12";
+        return "1.1.13";
     }
 
 
@@ -445,7 +445,12 @@ class Extension extends BaseExtension
             ));
         }
 
-        $record = $this->app['storage']->getContent($contenttype . '/' . $slugOrId);
+        $parameters = array();
+        if ( !$request->query->has('status') ) {
+            $parameters['status'] = 'published';
+        }
+
+        $record = $this->app['storage']->getContent($contenttype . '/' . $slugOrId, $parameters);
 
         if (!$record) {
             return $this->app->json(array('status' => 404), 404, array(

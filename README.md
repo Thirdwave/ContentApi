@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.13
+- [Bugfix] Tenzij expliciet gevraagd alleen gepubliceerde items teruggeven bij opvragen enkel record.
+
 ## 1.1.12
 - [Feature] Added an option to request items based on related item.
 
