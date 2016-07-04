@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.14
+- [Feature] Ophalen van relaties nu ook met subrelaties.
+
 ## 1.1.13
 - [Bugfix] Tenzij expliciet gevraagd alleen gepubliceerde items teruggeven bij opvragen enkel record.
 
