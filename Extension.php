@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.14";
+        return "1.1.15";
     }
 
 
@@ -850,7 +850,12 @@ class Extension extends BaseExtension
                 foreach ( $expand as $toBeExpanded ) {
                     if ( strpos($toBeExpanded, '.') !== false ) {
                         $subExpand = explode('.', $toBeExpanded);
-                        $continued[$subExpand[0]] = implode('.', array_slice($subExpand, 1));
+
+                        if ( !array_key_exists($subExpand[0], $continued) ) {
+                            $continued[$subExpand[0]] = array();
+                        }
+
+                        $continued[$subExpand[0]][] = implode('.', array_slice($subExpand, 1));
                     }
                 }
 
@@ -870,7 +875,7 @@ class Extension extends BaseExtension
 
                             if ($item) {
                                 if ( array_key_exists($contenttype, $continued) ) {
-                                    $related[] = $this->parseRecord($item, $type, $continued[$contenttype]);
+                                    $related[] = $this->parseRecord($item, $type, implode(',', $continued[$contenttype]));
                                 } else {
                                     $related[] = $this->parseRecord($item, $type);
                                 }

@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.15
+- [Bugfix] Meerdere subrelaties ophalen.
+
 ## 1.1.14
 - [Feature] Ophalen van relaties nu ook met subrelaties.
 
