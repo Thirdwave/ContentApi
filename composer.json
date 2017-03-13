@@ -20,13 +20,11 @@
         }
     ],
     "autoload": {
-        "files": [
-            "init.php"
-        ],
         "psr-4": {
-            "Bolt\\Extension\\Thirdwave\\ContentApi\\": [
-                ""
-            ]
+            "Bolt\\Extension\\Thirdwave\\ContentApi\\": "src"
         }
+    },
+    "extra": {
+        "bolt-class": "Bolt\\Extension\\Thirdwave\\ContentApi\\Extension"
     }
 }
