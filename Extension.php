@@ -57,6 +57,12 @@ class Extension extends BaseExtension
 
 
     /**
+     * @var string
+     */
+    protected $referer;
+
+
+    /**
      * Returns the name of the extension.
      *
      * @return string
@@ -74,7 +80,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.16";
+        return "1.1.17";
     }
 
 
