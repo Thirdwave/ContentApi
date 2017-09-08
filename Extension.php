@@ -74,7 +74,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.15";
+        return "1.1.16";
     }
 
 
@@ -167,6 +167,8 @@ class Extension extends BaseExtension
         if ($this->config['whitelist'] === false) {
             return null;
         }
+
+        $this->referer = $request->headers->get('referer');
 
         // By default the ip of the server running the api is whitelisted. Other
         // ip addresses need to be configured te gain access.
@@ -947,6 +949,18 @@ class Extension extends BaseExtension
             $size  = filesize($this->app['paths']['filespath'] . '/' . $value[$key]);
         }
 
+        $location = $host . $path;
+
+        if ( !empty($this->referer) ) {
+            $parsed = parse_url($this->referer);
+
+            if ( !empty($parsed['scheme']) && !empty($parsed['host']) ) {
+                if ( rtrim($host, '/') === $parsed['scheme'] . '://' . $parsed['host'] ) {
+                    $location = $path;
+                }
+            }
+        }
+
         return array(
           'title'     => isset($value['title']) ? $value['title'] : $value[$key],
           'file'      => $value[$key],
@@ -954,6 +968,7 @@ class Extension extends BaseExtension
           'path'      => $path,
           'host'      => $host,
           'url'       => $host . $path,
+          'location'  => $location,
           'size'      => $size,
           'extension' => Library::getExtension($value[$key]),
           'mime'      => $mime

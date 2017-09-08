@@ -5,6 +5,9 @@ Content API for Bolt CMS
 Changelog
 ----------------------------
 
+## 1.1.16
+- [Feature] Locatie toegevoegd voor bestanden afhankelijk van referer.
+
 ## 1.1.15
 - [Bugfix] Meerdere subrelaties ophalen.
 
