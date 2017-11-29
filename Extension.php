@@ -80,7 +80,7 @@ class Extension extends BaseExtension
      */
     public function getVersion()
     {
-        return "1.1.17";
+        return "1.1.18";
     }
 
 
@@ -962,7 +962,7 @@ class Extension extends BaseExtension
 
             if ( !empty($parsed['scheme']) && !empty($parsed['host']) ) {
                 if ( rtrim($host, '/') === $parsed['scheme'] . '://' . $parsed['host'] ) {
-                    $location = $path;
+                    $location = '/' . ltrim($path, '/');
                 }
             }
         }
