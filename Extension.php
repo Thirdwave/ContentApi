@@ -967,6 +967,12 @@ class Extension extends BaseExtension
             }
         }
 
+        $parsed = parse_url($location);
+
+        if (!empty($parsed['host']) && $parsed['host'] === 'localhost') {
+            $location = '/' . ltrim($path, '/');
+        }
+
         return array(
           'title'     => isset($value['title']) ? $value['title'] : $value[$key],
           'file'      => $value[$key],
